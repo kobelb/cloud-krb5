@@ -43,3 +43,4 @@ eclipse-build
 
 # Keytabs
 *.keytab
+krb-bundle.zip
