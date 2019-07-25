@@ -21,56 +21,21 @@
 	localhost = TEST.ELASTIC.CO
 ```
 
-Docker commands
---------
-```
-REALM_NAME=TEST.ELASTIC.CO
-docker build -t kdc ./
-docker run -d -p 88:88 -p 88:88/udp --name kdc kdc:latest
-docker cp kdc:/root/es.keytab ./
-docker cp kdc:/root/dev.keytab ./
-docker stop kdc
-docker rm kdc
-```
+# Steps
+1. `./run.sh` input the ES and Kibana hosts when prompted
+2. Upload the resultant `krb-bundle.zip` to as a custom user bundle
+3. Deployments -> Select your deployment -> Edit
+    1. Elasticsearch user settings overrides
 
+		```
+		xpack.security.authc.realms.kerberos.kerb1.keytab.path: es.keytab
+		```
 
-Generate those keytabs
---------
-```
-docker exec kdc kadmin.local -q "addprinc -pw changeme HTTP/localhost@TEST.ELASTIC.CO"
-docker exec kdc kadmin.local -q "ktadd -k /root/es.keytab HTTP/localhost@TEST.ELASTIC.CO"
-docker cp kdc:/root/es.keytab ./
+    2. Select custom user bundle
+    3. Kibana user settings overrides
 
-docker exec kdc kadmin.local -q "addprinc -pw changeme dev@TEST.ELASTIC.CO"
-docker exec kdc kadmin.local -q "ktadd /root/dev.keytab dev@TEST.ELASTIC.CO"
-docker cp kdc:/root/dev.keytab ./
-```
+		```
+		xpack.security.authProviders: ['kerberos', 'basic']
+		``` 
+4. `./map-roles.sh` input the ES host and the password for the `elastic` user
 
-Start Elasticsearch
----------
-```
-ES_JAVA_OPTS="-Djava.security.krb5.conf=/etc/krb5.conf" yarn es snapshot \
-    --license trial \
-    -E xpack.security.authc.token.enabled=true \
-    -E xpack.security.authc.realms.kerberos.kerb1.keytab.path=$GIT_HOME/kibana-krb5-docker/es.keytab
-```
-
-Set up role mappings
----------
-```
-POST {{es}}/_security/role_mapping/krb5
-Content-Type: application/json
-Authorization: Basic elastic changeme
-
-{
-  "roles": [ "superuser" ],
-  "enabled": true,
-  "rules": { "field" : { "realm.name" : "kerb1" } }
-}
-```
-
-Get the key for dev
----------
-```
-kinit -k -t ./dev.keytab dev@TEST.ELASTIC.CO 
-```

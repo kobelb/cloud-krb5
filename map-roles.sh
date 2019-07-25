@@ -1,6 +1,12 @@
 #! /bin/bash
 
-curl -XPOST https://ac7c8d9bfb8644c3875f827d816c8ed3.18.212.229.175.ip.es.io:9243/_security/role/kibana_sample_data -H 'Content-Type: application/json' -u elastic:changeme -k -d '{
+echo "ES host. Example: ed9b4eda940546be8de2d57c99cab795.us-central1.gcp.foundit.no"
+read -p "> " ES_HOST
+
+echo "elastic password"
+read -p "> " ELASTIC_PASSWORD
+
+curl -XPOST https://${ES_HOST}:9243/_security/role/kibana_sample_data -H 'Content-Type: application/json' -u elastic:${ELASTIC_PASSWORD} -k -d '{
   "indices": [
     {
       "names": ["kibana*"],
@@ -9,7 +15,7 @@ curl -XPOST https://ac7c8d9bfb8644c3875f827d816c8ed3.18.212.229.175.ip.es.io:924
   ]
 }'
 
-curl -XPOST https://ac7c8d9bfb8644c3875f827d816c8ed3.18.212.229.175.ip.es.io:9243/_security/role_mapping/krb5 -H 'Content-Type: application/json' -u elastic:changeme -k -d '{
+curl -XPOST https://${ES_HOST}:9243/_security/role_mapping/krb5 -H 'Content-Type: application/json' -u elastic:${ELASTIC_PASSWORD} -k -d '{
   "roles": [ "kibana_user", "kibana_sample_data" ],
   "enabled": true,
   "rules": { "field" : { "realm.name" : "kerb1" } }
